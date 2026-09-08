@@ -11,6 +11,7 @@ FROM alpine:latest
 RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
 COPY --from=builder /app/server .
+COPY --from=builder /app/web ./web
 EXPOSE 8080
 ENV PORT=8080
 ENV DB_PATH=/app/data/tickets.db

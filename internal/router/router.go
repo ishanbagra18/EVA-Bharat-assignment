@@ -39,9 +39,14 @@ func SetupRouter(
 
 	// Serve Static Frontend UI
 	workDir, _ := os.Getwd()
-	webDir := http.Dir(filepath.Join(workDir, "web"))
+	webPath := filepath.Join(workDir, "web")
+
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, filepath.Join(webPath, "index.html"))
+	})
+
 	r.Get("/*", func(w http.ResponseWriter, r *http.Request) {
-		fs := http.FileServer(webDir)
+		fs := http.FileServer(http.Dir(webPath))
 		fs.ServeHTTP(w, r)
 	})
 
