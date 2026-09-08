@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Studio Ticket Desk — REST API Workbench</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #090a0f;
+      --bg-surface: #12141d;
+      --bg-elevated: #1a1d2b;
+      --border-subtle: #262a3d;
+      --border-strong: #363c54;
+      
+      --text-main: #f1f5f9;
+      --text-muted: #828ca5;
+      --text-dim: #515970;
+
+      --mint-primary: #00f5a0;
+      --mint-glow: rgba(0, 245, 160, 0.15);
+      --amber-accent: #ffb703;
+      --coral-danger: #ff4757;
+      --cyan-accent: #00d2d3;
+      --indigo-accent: #5f27cd;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      
+      --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-sans); }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(0, 245, 160, 0.03) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(95, 39, 205, 0.04) 0%, transparent 40%);
+    }
+
+    /* Sidebar Layout */
+    .sidebar {
+      width: 280px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 50;
+    }
+
+    .sidebar-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-badge {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #00f5a0, #00d2d3);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #090a0f;
+      font-weight: 800;
+      font-size: 1.1rem;
+      box-shadow: 0 0 16px var(--mint-glow);
+    }
+
+    .sidebar-title {
+      font-weight: 800;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .sidebar-subtitle {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .nav-section {
+      padding: 1.25rem 1rem;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .nav-group-title {
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.75rem;
+      padding-left: 0.5rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 0.85rem;
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-bottom: 0.25rem;
+    }
+
+    .nav-item:hover, .nav-item.active {
+      background: var(--bg-elevated);
+      color: #fff;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .nav-item.active {
+      border-left: 3px solid var(--mint-primary);
+    }
+
+    .preset-box {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+
+    .sidebar-footer {
+      padding: 1.25rem;
+      border-top: 1px solid var(--border-subtle);
+      background: rgba(9, 10, 15, 0.4);
+    }
+
+    .user-profile {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--border-strong);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--mint-primary);
+      border: 1px solid var(--mint-primary);
+    }
+
+    /* Main Container */
+    .main-wrapper {
+      margin-left: 280px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    .top-bar {
+      height: 64px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(18, 20, 29, 0.8);
+      backdrop-filter: blur(12px);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      background: rgba(0, 245, 160, 0.08);
+      border: 1px solid rgba(0, 245, 160, 0.25);
+      color: var(--mint-primary);
+    }
+
+    .status-beacon {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--mint-primary);
+      box-shadow: 0 0 10px var(--mint-primary);
+    }
+
+    /* Buttons */
+    .btn {
+      background: var(--mint-primary);
+      color: #090a0f;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 20px var(--mint-glow);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text-main);
+      border: 1px solid var(--border-strong);
+    }
+
+    .btn-outline:hover {
+      background: var(--bg-elevated);
+      border-color: var(--text-muted);
+    }
+
+    .btn-coral {
+      background: rgba(255, 71, 87, 0.15);
+      color: var(--coral-danger);
+      border: 1px solid rgba(255, 71, 87, 0.3);
+    }
+
+    .btn-coral:hover {
+      background: var(--coral-danger);
+      color: #fff;
+    }
+
+    .btn-sm {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.78rem;
+    }
+
+    /* Content Area */
+    .content-container {
+      padding: 2rem;
+      flex: 1;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* Bento Metric Cards */
+    .bento-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .bento-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .bento-card:hover {
+      border-color: var(--border-strong);
+    }
+
+    .bento-title {
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .bento-value {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 0.4rem;
+      letter-spacing: -0.03em;
+    }
+
+    .bento-accent {
+      position: absolute;
+      top: 1rem;
+      right: 1.25rem;
+      font-size: 1.2rem;
+      opacity: 0.7;
+    }
+
+    /* Kanban Board Layout */
+    .kanban-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .kanban-col {
+      background: rgba(18, 20, 29, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      min-height: 500px;
+    }
+
+    .kanban-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .col-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      color: #fff;
+    }
+
+    .col-count {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: var(--bg-elevated);
+      padding: 0.15rem 0.5rem;
+      border-radius: 99px;
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .ticket-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.1rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .ticket-card:hover {
+      border-color: var(--mint-primary);
+      transform: translateY(-2px);
+    }
+
+    .ticket-id {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--mint-primary);
+      background: rgba(0, 245, 160, 0.08);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      display: inline-block;
+      margin-bottom: 0.6rem;
+    }
+
+    .ticket-name {
+      font-weight: 700;
+      font-size: 1rem;
+      color: #fff;
+      margin-bottom: 0.4rem;
+      line-height: 1.3;
+    }
+
+    .ticket-body {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      line-height: 1.4;
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* Terminal Console Drawer */
+    .terminal-drawer {
+      background: #06070a;
+      border-top: 1px solid var(--border-subtle);
+      padding: 1rem 1.5rem;
+      height: 200px;
+      overflow-y: auto;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+    }
+
+    .terminal-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .term-line {
+      display: flex;
+      gap: 0.8rem;
+      align-items: flex-start;
+      padding: 0.3rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    .term-time { color: var(--text-dim); }
+    .term-method { font-weight: 700; }
+    .term-GET { color: var(--cyan-accent); }
+    .term-POST { color: var(--mint-primary); }
+    .term-PATCH { color: var(--amber-accent); }
+    .term-status-200, .term-status-201 { color: var(--mint-primary); }
+    .term-status-400, .term-status-401, .term-status-403, .term-status-409 { color: var(--coral-danger); }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(9, 10, 15, 0.85);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-backdrop.active { opacity: 1; pointer-events: auto; }
+
+    .modal-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 480px;
+      padding: 2rem;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      color: #fff;
+      font-size: 0.92rem;
+      outline: none;
+      margin-bottom: 1.2rem;
+    }
+
+    .form-input:focus { border-color: var(--mint-primary); }
+  </style>
+</head>
+<body>
+
+  <!-- Left Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-badge">⚡</div>
+      <div>
+        <div class="sidebar-title">Studio Ticket Desk</div>
+        <div class="sidebar-subtitle">REST API WORKBENCH</div>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-group-title">Navigation</div>
+      <div class="nav-item active">
+        <span>📋</span> Kanban Board
+      </div>
+
+      <div class="nav-group-title" style="margin-top: 1.5rem;">Test Presets</div>
+      <div class="preset-box">
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.75rem;">Switch Accounts Instantly:</p>
+        <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+          <button class="btn btn-outline btn-sm" onclick="loginPreset('usera@example.com', 'password123')">🔑 Sign in as User A</button>
+          <button class="btn btn-outline btn-sm" onclick="loginPreset('userb@example.com', 'password123')">🔑 Sign in as User B</button>
+        </div>
+      </div>
+
+      <div class="nav-group-title" style="margin-top: 1.5rem;">Security & Auth Test</div>
+      <button class="btn btn-coral btn-sm" style="width: 100%; justify-content: center;" onclick="testCrossUser403()">
+        🛡️ Test 403 Cross-User
+      </button>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="user-profile" id="userProfileWidget" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <div class="avatar" id="avatarInitial">U</div>
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 700; color: #fff;" id="profileEmail">User</div>
+            <div style="font-size: 0.7rem; font-family: var(--font-mono); color: var(--mint-primary);">AUTHENTICATED</div>
+          </div>
+        </div>
+        <button class="btn btn-outline btn-sm" style="padding: 0.25rem 0.5rem;" onclick="logout()">Exit</button>
+      </div>
+      <div id="loggedOutWidget" style="text-align: center;">
+        <button class="btn" style="width: 100%; justify-content: center;" onclick="openAuthModal()">Sign In / Register</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main View Area -->
+  <div class="main-wrapper">
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div style="font-weight: 700; font-size: 1.1rem; color: #fff;">Support Tickets Overview</div>
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <div class="status-pill">
+          <div class="status-beacon"></div>
+          <span id="healthText">API ONLINE (200 OK)</span>
+        </div>
+        <button class="btn" onclick="openCreateModal()">+ New Ticket</button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="content-container">
+      <!-- Bento Stats Grid -->
+      <div class="bento-grid">
+        <div class="bento-card">
+          <div class="bento-title">Total Tickets</div>
+          <div class="bento-value" id="countTotal">0</div>
+          <div class="bento-accent">📂</div>
+        </div>
+        <div class="bento-card">
+          <div class="bento-title">Open</div>
+          <div class="bento-value" style="color: var(--cyan-accent);" id="countOpen">0</div>
+          <div class="bento-accent">🔵</div>
+        </div>
+        <div class="bento-card">
+          <div class="bento-title">In Progress</div>
+          <div class="bento-value" style="color: var(--amber-accent);" id="countInProgress">0</div>
+          <div class="bento-accent">⚡</div>
+        </div>
+        <div class="bento-card">
+          <div class="bento-title">Closed</div>
+          <div class="bento-value" style="color: var(--mint-primary);" id="countClosed">0</div>
+          <div class="bento-accent">✅</div>
+        </div>
+      </div>
+
+      <!-- Kanban Column Layout -->
+      <div class="kanban-board">
+        <!-- Open Column -->
+        <div class="kanban-col">
+          <div class="kanban-header">
+            <div class="col-title"><span style="color: var(--cyan-accent);">●</span> Open Tickets</div>
+            <div class="col-count" id="colCountOpen">0</div>
+          </div>
+          <div class="card-list" id="listOpen"></div>
+        </div>
+
+        <!-- In Progress Column -->
+        <div class="kanban-col">
+          <div class="kanban-header">
+            <div class="col-title"><span style="color: var(--amber-accent);">●</span> In Progress</div>
+            <div class="col-count" id="colCountInProgress">0</div>
+          </div>
+          <div class="card-list" id="listInProgress"></div>
+        </div>
+
+        <!-- Closed Column -->
+        <div class="kanban-col">
+          <div class="kanban-header">
+            <div class="col-title"><span style="color: var(--mint-primary);">●</span> Terminal Closed</div>
+            <div class="col-count" id="colCountClosed">0</div>
+          </div>
+          <div class="card-list" id="listClosed"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Bottom Terminal Console Drawer -->
+    <div class="terminal-drawer">
+      <div class="terminal-bar">
+        <span>🖥️ Live Developer Network Inspector Console</span>
+        <span style="cursor: pointer; color: var(--text-muted);" onclick="document.getElementById('termLog').innerHTML=''">Clear</span>
+      </div>
+      <div id="termLog"></div>
+    </div>
+  </div>
+
+  <!-- Create Ticket Modal -->
+  <div class="modal-backdrop" id="createModal">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 style="font-weight: 800; font-size: 1.2rem; color: #fff;">Create New Ticket</h3>
+        <button class="btn btn-outline btn-sm" onclick="closeCreateModal()">✕</button>
+      </div>
+      <form onsubmit="handleCreateTicket(event)">
+        <label class="form-label">Ticket Title *</label>
+        <input type="text" id="inputTitle" class="form-input" placeholder="e.g. DB connection timeout on boot" required>
+        
+        <label class="form-label">Description</label>
+        <textarea id="inputDesc" class="form-input" rows="3" placeholder="Provide extra detail..."></textarea>
+        
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button type="button" class="btn btn-outline" onclick="closeCreateModal()">Cancel</button>
+          <button type="submit" class="btn">Submit Ticket</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Auth Modal -->
+  <div class="modal-backdrop" id="authModal">
+    <div class="modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h3 style="font-weight: 800; font-size: 1.2rem; color: #fff;" id="authModalTitle">Sign In to Account</h3>
+        <button class="btn btn-outline btn-sm" onclick="closeAuthModal()">✕</button>
+      </div>
+      <form onsubmit="handleAuth(event)">
+        <label class="form-label">Email Address</label>
+        <input type="email" id="authEmailInput" class="form-input" placeholder="user@example.com" required>
+        
+        <label class="form-label">Password</label>
+        <input type="password" id="authPasswordInput" class="form-input" placeholder="Min 6 chars" required minlength="6">
+        
+        <div style="display: flex; gap: 0.75rem; align-items: center; justify-content: space-between;">
+          <a href="#" style="color: var(--mint-primary); font-size: 0.82rem; text-decoration: none;" id="toggleAuthLink" onclick="toggleAuthMode()">Need an account? Register</a>
+          <button type="submit" class="btn" id="authBtnSubmit">Sign In</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    let isRegisterMode = false;
+    let token = localStorage.getItem('jwt_token') || '';
+    let email = localStorage.getItem('user_email') || '';
+
+    window.onload = () => {
+      checkHealth();
+      if (token) {
+        setAuthenticatedUI(email);
+        loadTickets();
+      } else {
+        openAuthModal();
+      }
+    };
+
+    function logTerm(method, path, status, payload) {
+      const log = document.getElementById('termLog');
+      const time = new Date().toLocaleTimeString();
+      const div = document.createElement('div');
+      div.className = 'term-line';
+      div.innerHTML = `
+        <span class="term-time">[${time}]</span>
+        <span class="term-method term-${method}">${method}</span>
+        <span style="color: #fff;">${path}</span>
+        <span class="term-status-${status}">[${status}]</span>
+        <span style="color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 450px;">${JSON.stringify(payload)}</span>
+      `;
+      log.prepend(div);
+    }
+
+    async function checkHealth() {
+      try {
+        const res = await fetch(`${API_BASE}/health`);
+        const data = await res.json();
+        logTerm('GET', '/health', res.status, data);
+      } catch (err) {}
+    }
+
+    function openAuthModal() { document.getElementById('authModal').classList.add('active'); }
+    function closeAuthModal() { document.getElementById('authModal').classList.remove('active'); }
+
+    function toggleAuthMode() {
+      isRegisterMode = !isRegisterMode;
+      document.getElementById('authModalTitle').innerText = isRegisterMode ? 'Register New Account' : 'Sign In to Account';
+      document.getElementById('authBtnSubmit').innerText = isRegisterMode ? 'Register' : 'Sign In';
+      document.getElementById('toggleAuthLink').innerText = isRegisterMode ? 'Already have an account? Sign In' : 'Need an account? Register';
+    }
+
+    async function loginPreset(presetEmail, presetPassword) {
+      document.getElementById('authEmailInput').value = presetEmail;
+      document.getElementById('authPasswordInput').value = presetPassword;
+      isRegisterMode = false;
+      
+      // Attempt login, if user doesn't exist auto-register then login
+      try {
+        let res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: presetEmail, password: presetPassword })
+        });
+        let data = await res.json();
+        logTerm('POST', '/auth/login', res.status, data);
+
+        if (!res.ok && res.status === 401) {
+          // Auto register
+          let regRes = await fetch(`${API_BASE}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: presetEmail, password: presetPassword })
+          });
+          let regData = await regRes.json();
+          logTerm('POST', '/auth/register', regRes.status, regData);
+
+          // Retry login
+          res = await fetch(`${API_BASE}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: presetEmail, password: presetPassword })
+          });
+          data = await res.json();
+        }
+
+        if (res.ok) {
+          token = data.token;
+          email = presetEmail;
+          localStorage.setItem('jwt_token', token);
+          localStorage.setItem('user_email', email);
+          closeAuthModal();
+          setAuthenticatedUI(email);
+          loadTickets();
+        } else {
+          alert(`Auth Error: ${data.error}`);
+        }
+      } catch (e) {
+        alert('Network request failed');
+      }
+    }
+
+    async function handleAuth(e) {
+      e.preventDefault();
+      const inputEmail = document.getElementById('authEmailInput').value;
+      const inputPassword = document.getElementById('authPasswordInput').value;
+      const path = isRegisterMode ? '/auth/register' : '/auth/login';
+
+      try {
+        const res = await fetch(`${API_BASE}${path}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: inputEmail, password: inputPassword })
+        });
+        const data = await res.json();
+        logTerm('POST', path, res.status, data);
+
+        if (!res.ok) {
+          alert(`Error (${res.status}): ${data.error}`);
+          return;
+        }
+
+        if (isRegisterMode) {
+          alert('Registration successful! Logging in...');
+          toggleAuthMode();
+          handleAuth(e);
+          return;
+        }
+
+        token = data.token;
+        email = inputEmail;
+        localStorage.setItem('jwt_token', token);
+        localStorage.setItem('user_email', email);
+        closeAuthModal();
+        setAuthenticatedUI(email);
+        loadTickets();
+      } catch (err) {
+        alert('Authentication failed');
+      }
+    }
+
+    function setAuthenticatedUI(userEmail) {
+      document.getElementById('userProfileWidget').style.display = 'flex';
+      document.getElementById('loggedOutWidget').style.display = 'none';
+      document.getElementById('profileEmail').innerText = userEmail.split('@')[0];
+      document.getElementById('avatarInitial').innerText = userEmail[0].toUpperCase();
+    }
+
+    function logout() {
+      token = '';
+      email = '';
+      localStorage.removeItem('jwt_token');
+      localStorage.removeItem('user_email');
+      document.getElementById('userProfileWidget').style.display = 'none';
+      document.getElementById('loggedOutWidget').style.display = 'block';
+      document.getElementById('listOpen').innerHTML = '';
+      document.getElementById('listInProgress').innerHTML = '';
+      document.getElementById('listClosed').innerHTML = '';
+      document.getElementById('countTotal').innerText = '0';
+      document.getElementById('countOpen').innerText = '0';
+      document.getElementById('countInProgress').innerText = '0';
+      document.getElementById('countClosed').innerText = '0';
+      openAuthModal();
+    }
+
+    async function loadTickets() {
+      try {
+        const res = await fetch(`${API_BASE}/tickets`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const tickets = await res.json();
+        logTerm('GET', '/tickets', res.status, tickets);
+
+        if (!res.ok) {
+          if (res.status === 401) logout();
+          return;
+        }
+
+        renderKanban(tickets);
+      } catch (err) {}
+    }
+
+    function renderKanban(tickets) {
+      const openList = document.getElementById('listOpen');
+      const inProgList = document.getElementById('listInProgress');
+      const closedList = document.getElementById('listClosed');
+
+      openList.innerHTML = '';
+      inProgList.innerHTML = '';
+      closedList.innerHTML = '';
+
+      const openTickets = tickets.filter(t => t.status === 'open');
+      const inProgTickets = tickets.filter(t => t.status === 'in_progress');
+      const closedTickets = tickets.filter(t => t.status === 'closed');
+
+      document.getElementById('countTotal').innerText = tickets.length;
+      document.getElementById('countOpen').innerText = openTickets.length;
+      document.getElementById('countInProgress').innerText = inProgTickets.length;
+      document.getElementById('countClosed').innerText = closedTickets.length;
+
+      document.getElementById('colCountOpen').innerText = openTickets.length;
+      document.getElementById('colCountInProgress').innerText = inProgTickets.length;
+      document.getElementById('colCountClosed').innerText = closedTickets.length;
+
+      openTickets.forEach(t => openList.appendChild(createTicketCard(t)));
+      inProgTickets.forEach(t => inProgList.appendChild(createTicketCard(t)));
+      closedTickets.forEach(t => closedList.appendChild(createTicketCard(t)));
+    }
+
+    function createTicketCard(t) {
+      const card = document.createElement('div');
+      card.className = 'ticket-card';
+      const isClosed = t.status === 'closed';
+
+      card.innerHTML = `
+        <div class="ticket-id"># ${t.id.substring(0, 8)}</div>
+        <div class="ticket-name">${escapeHtml(t.title)}</div>
+        <div class="ticket-body">${escapeHtml(t.description || 'No description.')}</div>
+        <div class="card-actions">
+          ${t.status === 'open' ? `
+            <button class="btn btn-outline btn-sm" onclick="patchStatus('${t.id}', 'in_progress')">⚡ In Progress</button>
+            <button class="btn btn-outline btn-sm" onclick="patchStatus('${t.id}', 'closed')">✅ Close</button>
+          ` : ''}
+          ${t.status === 'in_progress' ? `
+            <button class="btn btn-outline btn-sm" onclick="patchStatus('${t.id}', 'closed')">✅ Close</button>
+          ` : ''}
+          ${isClosed ? `
+            <button class="btn btn-coral btn-sm" style="width: 100%; justify-content: center;" onclick="patchStatus('${t.id}', 'in_progress')">🔒 Reopen (Test 409 Error)</button>
+          ` : ''}
+        </div>
+      `;
+      return card;
+    }
+
+    async function patchStatus(ticketId, status) {
+      try {
+        const res = await fetch(`${API_BASE}/tickets/${ticketId}/status`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ status })
+        });
+        const data = await res.json();
+        logTerm('PATCH', `/tickets/${ticketId}/status`, res.status, data);
+
+        if (!res.ok) {
+          alert(`Status Error (${res.status}): ${data.error}`);
+          return;
+        }
+
+        loadTickets();
+      } catch (err) {
+        alert('Failed to patch status');
+      }
+    }
+
+    function openCreateModal() { document.getElementById('createModal').classList.add('active'); }
+    function closeCreateModal() { document.getElementById('createModal').classList.remove('active'); }
+
+    async function handleCreateTicket(e) {
+      e.preventDefault();
+      const title = document.getElementById('inputTitle').value;
+      const description = document.getElementById('inputDesc').value;
+
+      try {
+        const res = await fetch(`${API_BASE}/tickets`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ title, description })
+        });
+        const data = await res.json();
+        logTerm('POST', '/tickets', res.status, data);
+
+        if (!res.ok) {
+          alert(`Error (${res.status}): ${data.error}`);
+          return;
+        }
+
+        document.getElementById('inputTitle').value = '';
+        document.getElementById('inputDesc').value = '';
+        closeCreateModal();
+        loadTickets();
+      } catch (err) {
+        alert('Failed to create ticket');
+      }
+    }
+
+    async function testCrossUser403() {
+      const ticketId = prompt('Enter a ticket ID to test cross-user authorization block:');
+      if (!ticketId) return;
+
+      const fakeToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZmFrZS11c2VyLTk5OTk5OSJ9.signature";
+      try {
+        const res = await fetch(`${API_BASE}/tickets/${ticketId}`, {
+          headers: { 'Authorization': `Bearer ${fakeToken}` }
+        });
+        const data = await res.json();
+        logTerm('GET (Cross-User)', `/tickets/${ticketId}`, res.status, data);
+        alert(`API Status Code: ${res.status}\nResponse: ${JSON.stringify(data)}\n\n(Expected: 403 Forbidden for unauthorized user)`);
+      } catch (err) {
+        alert('Network request error');
+      }
+    }
+
+    function escapeHtml(str) {
+      return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+  </script>
+</body>
+</html>

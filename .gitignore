@@ -1,0 +1,22 @@
+# Executables & Binaries
+/server
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Data & SQLite DB
+/data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Environment Variables
+.env
+
+# IDE / System
+.idea/
+.vscode/
+.DS_Store
